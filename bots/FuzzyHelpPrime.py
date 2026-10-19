@@ -1,7 +1,6 @@
 # Help is an apt name for this one
 # Jay Nash & Russell Kosovesky 2023 COM407
 import libpyAI as ai
-import numpy as num
 import random as random
 
 def AI_loop():
