@@ -1,7 +1,6 @@
 # Jay Nash 2023 COM407
 # With assistance from Russell Kosovsky and Brooke Brandenbruger during the theoretical design stage
 import libpyAI as ai # Expected Error without proper enviornment
-import numpy as num
 import random as random
 
 def AI_loop():

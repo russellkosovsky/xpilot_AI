@@ -88,7 +88,7 @@ class NeuralHelp extends javaAI {
         }
         
         public static void main(String args[]) {
-            String[] new_args = {"-name","Help2"};
+            String[] new_args = {"-name","Help2","-join","localhost"};
             try {
                 FileInputStream file = new FileInputStream("net_best_93_21.ser");
                 ObjectInputStream in = new ObjectInputStream(file);

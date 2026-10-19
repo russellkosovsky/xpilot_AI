@@ -160,4 +160,4 @@ def AI_loop():
     
   
   
-ai.start(AI_loop,["-name","FuzzyHelp"])
+ai.start(AI_loop,["-name","FuzzyHelp","-join","localhost"])
