@@ -48,18 +48,19 @@ public class GeneticAlgorithm {
       return tempPopulation;
     }
     
-    private Chromosome selectParent() {
-    	double fitnessSum = population.stream().mapToDouble(chr -> chr.fitness).sum();
+    private Chromosome selectParent() { //Roulette selection. Fitness is the XPilot score, which can be zero or negative,
+                                        //so each weight is shifted to fitness - minFitness + 1, keeping every weight positive
+    	double minFitness = population.stream().mapToDouble(chr -> chr.fitness).min().orElseThrow();
+    	double weightSum = population.stream().mapToDouble(chr -> chr.fitness - minFitness + 1).sum();
     	double sum = 0;
-    	double target = ThreadLocalRandom.current().nextDouble(0, fitnessSum);
+    	double target = ThreadLocalRandom.current().nextDouble(0, weightSum);
     	for (int i = 0; i < populationSize; i++) {
-    	    if (population.get(i).fitness + sum >= target) {
+    	    sum += population.get(i).fitness - minFitness + 1;
+    	    if (sum >= target) {
     			return population.get(i);
-    	    } else {
-    	    	sum += population.get(i).fitness;
     	    }
     	}
-    	return null;
+    	return population.get(populationSize - 1);
     }
 
     private void crossover() { //Standard crossover using a random crossover index and substrings, also handles mutation
@@ -85,17 +86,13 @@ public class GeneticAlgorithm {
       this.population = newGeneration;
     }
 
-    public void run(int maxGenerations) { //Primary function that handles running the GA through generations and stops when a certain fitness is reached
+    public void run(int maxGenerations) { //Primary function that handles running the GA through generations
       while (generation < maxGenerations) {
         crossover();
         generation++;
 
         Chromosome best = getBest();
         System.out.println("Generation: " + generation + " | Best Fitness: " + best.fitness + " | Average Fitness: " + averageFitness());
-        if (best.fitness == chromosomeSize) { //This is kind of a hack since we know the maximum possible fitness and should be changed for the xpilot bot
-          System.out.println("Best Chromosome Found: " + best.genes);
-          break;
-        }
         if (generation%10 == 0) { //Saving every 10 generations best chromosome and avg fitness
           midSave();
         }
@@ -116,6 +113,7 @@ public class GeneticAlgorithm {
 
     private void midSave() { //Saves every x generations the best chromosome and the avg fitness of the population
       try {
+        new File("./checkpoints").mkdirs();
         FileWriter writer = new FileWriter("./checkpoints/" + Integer.toString(generation) + "_generation_checkpoint.txt", false);
         Chromosome best = getBest();
         double avg = averageFitness();
@@ -150,9 +148,13 @@ public class GeneticAlgorithm {
       }
     }
 
+    // Usage: java -Djava.library.path=. GeneticAlgorithm [populationSize] [generations]
+    // Needs an xpilots server on localhost; each chromosome plays one game of Production.
     public static void main(String[] args) { //Main function
-      GeneticAlgorithm ga = new GeneticAlgorithm(200, 90, 0.001, true);
-      ga.run(1000);
+      int populationSize = args.length > 0 ? Integer.parseInt(args[0]) : 200;
+      int generations = args.length > 1 ? Integer.parseInt(args[1]) : 1000;
+      GeneticAlgorithm ga = new GeneticAlgorithm(populationSize, 90, 0.001, true);
+      ga.run(generations);
     }
 }
 
@@ -165,26 +167,39 @@ class Chromosome { //Chromosome helper class
       this.fitness = calculateFitness();
     }
 
-    public double calculateFitness() { // Calculates fitness of chromosome
-      double fit = 0;
-      String[] new_args = {"-name","Petko & Co.","-join","localhost"};
-      try {
-      PrintWriter out = new PrintWriter("chromosome.txt");
-      out.println(genes);
-	  out.close();
-	  } catch (IOException e) {
-	  System.out.println("uhoh");
-	  }
-<<<<<<< HEAD
+    public double calculateFitness() { // Plays one game of Production with this chromosome and returns its score
+      // The XPilot client can only start once per process, so each game runs in a
+      // new JVM with this one's classpath and library path. Production prints
+      // "FITNESS <score>" when its game ends.
       System.out.println("New Agent Chromosome: " + genes);
-=======
-	  System.out.println("New Agent Chromosome: " + genes);
->>>>>>> 19e7f40f8ce04c9b2fa5a2b5bdb1f52ea571bc22
-      Production prod = new Production(new_args);
-      System.out.println(prod.fitness);
-      System.out.println(prod.chromosome);
-      fit = prod.fitness;
-      prod = null;
-      return fit;
+      String java = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
+      ProcessBuilder builder = new ProcessBuilder(java,
+          "-cp", System.getProperty("java.class.path"),
+          "-Djava.library.path=" + System.getProperty("java.library.path"),
+          "Production", genes);
+      builder.redirectErrorStream(true);
+      StringBuilder output = new StringBuilder();
+      Double fit = null;
+      try {
+        Process game = builder.start();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(game.getInputStream()));
+        String line;
+        while ((line = reader.readLine()) != null) { //Read to the end so the game never blocks on a full pipe
+          if (line.startsWith("FITNESS ")) {
+            fit = Double.parseDouble(line.substring("FITNESS ".length()).trim());
+          } else {
+            output.append(line).append("\n");
+          }
+        }
+        game.waitFor();
+        if (fit != null) {
+          System.out.println("Fitness: " + fit);
+          return fit;
+        }
+        System.out.println("Error: Production exited with code " + game.exitValue() + " without a fitness. Is xpilots running? Its output:\n" + output);
+      } catch (IOException | InterruptedException e) {
+        System.out.println("Error: Could Not Run Production: " + e);
+      }
+      return 0;
     }
 }
