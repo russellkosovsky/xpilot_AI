@@ -1,4 +1,4 @@
-// Purpose: train the network with the collected data
+// Purpose: train the network with the data collected by dataCollect.py
 
 
 import java.io.*;
@@ -19,8 +19,8 @@ class fuzzyTrain {
 		elapsedTotal = 0;
 		correct = 0;
 		incorrect = 0;
-		File input = new File("./inputs_15.txt");
-		File output = new File("./outputs_15.txt");
+		File input = new File("./inputs_15_4.txt");
+		File output = new File("./outputs_15_4.txt");
 		BufferedReader bri = new BufferedReader(new FileReader(input));
 		BufferedReader bro = new BufferedReader(new FileReader(output));
 		String in;
