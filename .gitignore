@@ -1,5 +1,5 @@
 mac/build/
 mac/bin/
 mac/lib/
-bots/*-darwin.so
-bots/*.dylib
+bots/**/*-darwin.so
+bots/**/*.dylib

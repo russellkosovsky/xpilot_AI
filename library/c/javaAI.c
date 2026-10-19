@@ -1846,10 +1846,12 @@ JNIEXPORT int JNICALL Java_javaAI_start(JNIEnv * env, jobject jobj, int argc, js
     prime_jobj = jobj;
     jstring s;
     char *argv[argc];
+    const char *jargv[argc]; //XPilot's option parsing reorders argv, so keep the original pointers to release
     int i,j,k;
     for(i = 0; i < argc; i++) {
         s = (*env)->GetObjectArrayElement(env, args, i); //Gets object at index i from args -EGG
-        argv[i] = (*env)->GetStringUTFChars(env, s, NULL); //Converts jstring to char[] and places in argv -EGG
+        jargv[i] = (*env)->GetStringUTFChars(env, s, NULL); //Converts jstring to char[] -EGG
+        argv[i] = (char *) jargv[i];
     }
     ship_t theShip;
     theShip.x=-1;
@@ -1881,7 +1883,7 @@ JNIEXPORT int JNICALL Java_javaAI_start(JNIEnv * env, jobject jobj, int argc, js
     //Cleanup, cleanup! Everybody do your share! -EGG
     for(i = 0; i < argc; i++) {
         s = (*env)->GetObjectArrayElement(env, args, i); //Gets object at index i from args -EGG
-        (*env)->ReleaseStringUTFChars(env, s, argv[i]); //Releases memory where object was stored
+        (*env)->ReleaseStringUTFChars(env, s, jargv[i]); //Releases memory where object was stored
     }
     return retval;
 }

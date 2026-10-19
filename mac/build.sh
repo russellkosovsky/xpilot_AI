@@ -178,10 +178,21 @@ cp "$SRC"/lib/maps/*.xp "$LIB_DIR/maps/"
 cp "$REPO_DIR"/maps/*.xp "$LIB_DIR/maps/"
 
 # --- Make the AI libraries loadable from bots/ ------------------------------
-# bots/ already holds the Linux libpyAI.so. Python on macOS tries the
-# .cpython-XY-darwin.so suffix before plain .so, and Java looks for .dylib, so
-# the Mac libraries sit beside the Linux ones without replacing them.
-log "Copying AI libraries into bots/"
-cp "$BIN_DIR"/libpyAI*-darwin.so "$BIN_DIR/libjavaAI.dylib" "$REPO_DIR/bots/" 2>/dev/null || true
+# Copy the Mac libraries into every bots/ folder holding a bot, so bots run
+# from their own folder. Some folders also hold the Linux libpyAI.so: Python on
+# macOS tries the .cpython-XY-darwin.so suffix before plain .so, and Java looks
+# for .dylib, so the Mac libraries sit beside the Linux ones.
+log "Copying AI libraries into bot folders under bots/"
+PY_MODULE="$(ls "$BIN_DIR"/libpyAI*-darwin.so 2>/dev/null | head -1)"
+grep -rlE --include='*.py' '^import libpyAI' "$REPO_DIR/bots" | xargs -n1 dirname | sort -u |
+  while read -r dir; do
+    [ -n "$PY_MODULE" ] && cp "$PY_MODULE" "$dir/"
+    echo "  python: ${dir#$REPO_DIR/}"
+  done
+grep -rlE --include='*.java' 'extends javaAI' "$REPO_DIR/bots" | xargs -n1 dirname | sort -u |
+  while read -r dir; do
+    [ -f "$BIN_DIR/libjavaAI.dylib" ] && cp "$BIN_DIR/libjavaAI.dylib" "$dir/"
+    echo "  java:   ${dir#$REPO_DIR/}"
+  done
 
 log "Done. Binaries are in $BIN_DIR"

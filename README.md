@@ -12,7 +12,7 @@ One-time setup:
 xcode-select --install            # if the Command Line Tools are missing
 brew install libx11 libxext       # X11 headers and libraries
 brew install --cask xquartz       # X server (asks for your password); log out and back in afterwards
-mac/build.sh                      # builds into mac/bin, copies the AI libraries into bots/
+mac/build.sh                      # builds into mac/bin, copies the AI libraries into each bot folder
 ```
 
 Play:
@@ -27,7 +27,8 @@ Notes:
 
 - The Python module is built for the `python3` used by `mac/build.sh`. To use a
   different one, run `PYTHON=python3.14 mac/build.sh`.
-- Java bots: `cd bots && java -Djava.library.path=. Spinner`.
+- Java bots: `cd bots && java -Djava.library.path=. Spinner` (same in any bot folder).
+- Rerun `mac/build.sh` after adding a bot folder so it gets its own copy of the libraries.
 - Bots need XQuartz running even with `ai.headlessMode()`, because the client
   still opens the X display.
 - Server data (defaults, robots, maps) lives in `mac/lib/xpilot`; `mac/build.sh`
